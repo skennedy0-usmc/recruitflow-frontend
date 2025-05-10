@@ -1,221 +1,172 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import Candidate from './Candidate';
+import LinkDetails from './LinkDetails';
+import LinkList from './LinkList';
+import DashboardSummary from './Components/DashboardSummary';
+import StatusTracker from './Components/StatusTracker';
+import StatusBoard from './Components/StatusBoard';
 
-function App() {
-  // 🔒 State
+const App = () => {
   const [candidates, setCandidates] = useState([]);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [requisitions, setRequisitions] = useState([]);
-  const [links, setLinks] = useState([]);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
-  const [selectedReqId, setSelectedReqId] = useState('all');
-
-  // 💡 Form states
-  const [candidateForm, setCandidateForm] = useState({ name: '', email: '', phone: '', resume_url: '' });
-  const [requisitionForm, setRequisitionForm] = useState({
-    title: '', department: '', location: '', status: '',
-    date_opened: '', date_closed: '', hiring_manager: '', recruiter: '', notes: ''
-  });
-  const [linkForm, setLinkForm] = useState({ candidate_id: '', requisition_id: '', status: '', notes: '' });
+  const [selectedRequisition, setSelectedRequisition] = useState(null);
+  const [linkingMode, setLinkingMode] = useState(false);
+  const [notes, setNotes] = useState({});
+  const [statusByRequisition, setStatusByRequisition] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [view, setView] = useState('dashboard');
 
   useEffect(() => {
     fetchCandidates();
     fetchRequisitions();
-    fetchLinks();
   }, []);
 
   const fetchCandidates = async () => {
     const res = await axios.get('http://localhost:3000/candidates');
     setCandidates(res.data);
   };
+
   const fetchRequisitions = async () => {
     const res = await axios.get('http://localhost:3000/requisitions');
     setRequisitions(res.data);
   };
-  const fetchLinks = async () => {
-    const res = await axios.get('http://localhost:3000/links');
-    setLinks(res.data);
+
+  const handleCandidateClick = (candidate) => {
+    if (linkingMode && selectedRequisition) {
+      axios.post('http://localhost:3000/links', {
+        candidate_id: candidate.id,
+        requisition_id: selectedRequisition.id,
+        status: 'Applied',
+        notes: '',
+      });
+    } else {
+      setSelectedCandidate(candidate);
+    }
   };
 
-  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const isValidPhone = (phone) => /^\+?[0-9\-()\s]{7,20}$/.test(phone);
-
-  const handleCandidateSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    if (!isValidEmail(candidateForm.email)) return setError('Invalid email address.');
-    if (candidateForm.phone && !isValidPhone(candidateForm.phone)) return setError('Invalid phone number.');
-    await axios.post('http://localhost:3000/candidates', candidateForm);
-    setCandidateForm({ name: '', email: '', phone: '', resume_url: '' });
-    setMessage('Candidate added');
-    fetchCandidates();
+  const handleRequisitionClick = (requisition) => {
+    if (linkingMode && selectedCandidate) {
+      axios.post('http://localhost:3000/links', {
+        candidate_id: selectedCandidate.id,
+        requisition_id: requisition.id,
+        status: 'Applied',
+        notes: '',
+      });
+    } else {
+      setSelectedRequisition(requisition);
+    }
   };
 
-  const handleRequisitionSubmit = async (e) => {
-    e.preventDefault();
-    await axios.post('http://localhost:3000/requisitions', requisitionForm);
-    setRequisitionForm({
-      title: '', department: '', location: '', status: '',
-      date_opened: '', date_closed: '', hiring_manager: '', recruiter: '', notes: ''
-    });
-    setMessage('Requisition added');
-    fetchRequisitions();
+  const handleNoteChange = (id, newNote) => {
+    setNotes({ ...notes, [id]: newNote });
   };
 
-  const handleLinkSubmit = async (e) => {
-    e.preventDefault();
-    await axios.post('http://localhost:3000/links', linkForm);
-    setLinkForm({ candidate_id: '', requisition_id: '', status: '', notes: '' });
-    setMessage('Link created');
-    fetchLinks();
-  };
-
-  const deleteCandidate = async (id) => {
-    await axios.delete(`http://localhost:3000/candidates/${id}`);
-    fetchCandidates();
-  };
-  const deleteRequisition = async (id) => {
-    await axios.delete(`http://localhost:3000/requisitions/${id}`);
-    fetchRequisitions();
-  };
-  const deleteLink = async (id) => {
-    await axios.delete(`http://localhost:3000/links/${id}`);
-    fetchLinks();
+  const handleStatusChange = (requisitionId, newStatus) => {
+    setStatusByRequisition({ ...statusByRequisition, [requisitionId]: newStatus });
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto font-sans space-y-10">
-      <h1 className="text-3xl font-bold text-center text-indigo-700">RecruitFlow</h1>
+    <div className="flex flex-col h-screen p-4 space-y-4 bg-gray-100">
+      <header className="flex items-center justify-between p-4 bg-white shadow rounded-md mb-4">
+  <div className="flex items-center space-x-2 text-blue-700 font-bold text-xl">
+    <span>🚀</span>
+    <span>RecruitFlow</span>
+  </div>
 
-      {message && <p className="text-green-600 text-sm">{message}</p>}
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+  <nav className="flex space-x-2">
+    <button
+      onClick={() => setView('dashboard')}
+      className={`px-4 py-2 rounded-md transition font-medium ${
+        view === 'dashboard'
+          ? 'bg-blue-600 text-white'
+          : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+      }`}
+    >
+      📊 Dashboard
+    </button>
+    <button
+      onClick={() => setView('board')}
+      className={`px-4 py-2 rounded-md transition font-medium ${
+        view === 'board'
+          ? 'bg-blue-600 text-white'
+          : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+      }`}
+    >
+      🗂 Status Board
+    </button>
+  </nav>
+</header>
 
-      {/* 👤 Candidate Form */}
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Add Candidate</h2>
-        <form onSubmit={handleCandidateSubmit} className="grid md:grid-cols-2 gap-4">
-          <input name="name" placeholder="Name" value={candidateForm.name} onChange={(e) => setCandidateForm({ ...candidateForm, name: e.target.value })} className="p-2 border rounded" required />
-          <input name="email" placeholder="Email" value={candidateForm.email} onChange={(e) => setCandidateForm({ ...candidateForm, email: e.target.value })} className="p-2 border rounded" required />
-          <input name="phone" placeholder="Phone" value={candidateForm.phone} onChange={(e) => setCandidateForm({ ...candidateForm, phone: e.target.value })} className="p-2 border rounded" />
-          <input name="resume_url" placeholder="Resume URL" value={candidateForm.resume_url} onChange={(e) => setCandidateForm({ ...candidateForm, resume_url: e.target.value })} className="p-2 border rounded" />
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 col-span-2">Add</button>
-        </form>
+      {view === 'dashboard' ? (
+        <>
+  <DashboardSummary candidates={candidates} requisitions={requisitions} />
 
-        <div className="mt-6 grid md:grid-cols-2 gap-4">
-          {candidates.map(c => (
-            <div key={c.id} className="border p-3 rounded">
-              <h4 className="font-semibold">{c.name}</h4>
-              <p>{c.email}</p>
-              <p>{c.phone}</p>
-              <a href={c.resume_url} className="text-blue-500 underline">Resume</a>
-              <button onClick={() => deleteCandidate(c.id)} className="text-red-600 text-sm mt-2">Delete</button>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 📄 Requisition Form */}
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Add Requisition</h2>
-        <form onSubmit={handleRequisitionSubmit} className="grid md:grid-cols-2 gap-4">
-          {Object.entries(requisitionForm).map(([key, val]) => (
-            key !== 'notes' ? (
-              <input key={key} name={key} placeholder={key.replace('_', ' ')} value={val} onChange={(e) => setRequisitionForm({ ...requisitionForm, [key]: e.target.value })} className="p-2 border rounded" />
-            ) : null
-          ))}
-          <textarea name="notes" placeholder="Notes" value={requisitionForm.notes} onChange={(e) => setRequisitionForm({ ...requisitionForm, notes: e.target.value })} className="p-2 border rounded md:col-span-2" />
-          <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 col-span-2">Add</button>
-        </form>
-
-        <div className="mt-6 grid md:grid-cols-2 gap-4">
-          {requisitions.map(r => (
-            <div key={r.id} className="border p-3 rounded">
-              <h4 className="font-semibold">{r.title}</h4>
-              <p>Status: {r.status}</p>
-              <p>Manager: {r.hiring_manager}</p>
-              <button onClick={() => deleteRequisition(r.id)} className="text-red-600 text-sm mt-2">Delete</button>
-              <div className="mt-2 pl-2 border-t pt-2">
-                {links.filter(l => l.requisition_id === r.id).map(link => {
-                  const candidate = candidates.find(c => c.id === link.candidate_id);
-                  return candidate ? (
-                    <div key={link.id} className="text-sm">
-                      • {candidate.name} ({link.status})
-                      <button onClick={() => deleteLink(link.id)} className="ml-2 text-xs text-red-500">Remove</button>
-                    </div>
-                  ) : null;
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 🔗 Link Form */}
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Link Candidate</h2>
-        <form onSubmit={handleLinkSubmit} className="grid md:grid-cols-2 gap-4">
-          <select name="candidate_id" value={linkForm.candidate_id} onChange={(e) => setLinkForm({ ...linkForm, candidate_id: e.target.value })} className="p-2 border rounded" required>
-            <option value="">Select Candidate</option>
-            {candidates.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          <select name="requisition_id" value={linkForm.requisition_id} onChange={(e) => setLinkForm({ ...linkForm, requisition_id: e.target.value })} className="p-2 border rounded" required>
-            <option value="">Select Requisition</option>
-            {requisitions.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
-          </select>
-          <input name="status" placeholder="Status" value={linkForm.status} onChange={(e) => setLinkForm({ ...linkForm, status: e.target.value })} className="p-2 border rounded" />
-          <textarea name="notes" placeholder="Notes" value={linkForm.notes} onChange={(e) => setLinkForm({ ...linkForm, notes: e.target.value })} className="p-2 border rounded md:col-span-2" />
-          <button type="submit" className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 col-span-2">Link</button>
-        </form>
-      </section>
-
-      {/* 🎯 Filtered Linked Candidates */}
-      <section>
-        <h2 className="text-xl font-semibold mt-10 mb-2">Linked Candidates</h2>
-
-        <div className="mb-4">
-          <label className="font-semibold mr-2">Filter by Requisition:</label>
-          <select
-            value={selectedReqId}
-            onChange={(e) => setSelectedReqId(e.target.value)}
-            className="border p-2 rounded"
+  <div className="flex space-x-4 flex-1 overflow-hidden">
+    {/* Candidates */}
+    <div className="w-1/3 overflow-y-auto bg-white p-5 rounded-xl shadow-md border">
+      <h2 className="text-xl font-semibold text-blue-700 mb-4">👤 Candidates</h2>
+      <input
+        type="text"
+        placeholder="Search candidates..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full p-2 mb-4 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+      />
+      {candidates
+        .filter((c) => c.name.toLowerCase().includes(searchTerm.toLowerCase()))
+        .map((c) => (
+          <div
+            key={c.id}
+            onClick={() => handleCandidateClick(c)}
+            className="cursor-pointer p-3 mb-2 border border-gray-200 rounded hover:bg-blue-50 transition"
           >
-            <option value="all">All</option>
-            {requisitions.map((r) => (
-              <option key={r.id} value={r.id}>{r.title}</option>
-            ))}
-          </select>
-        </div>
+            <Candidate data={c} />
+          </div>
+        ))}
+    </div>
 
-        <ul className="space-y-2">
-          {links
-            .filter(link => selectedReqId === 'all' || link.requisition_id === selectedReqId)
-            .map(link => {
-              const candidate = candidates.find((c) => c.id === link.candidate_id);
-              const requisition = requisitions.find((r) => r.id === link.requisition_id);
-              if (!candidate || !requisition) return null;
-              return (
-                <li key={link.id} className="border p-3 rounded shadow-sm">
-                  <span className="font-semibold">{candidate.name}</span> → <span className="text-indigo-700">{requisition.title}</span>
-                  {link.status && <span className="ml-2 text-sm text-gray-600">(Status: {link.status})</span>}
-                  {link.notes && <p className="text-sm text-gray-500 mt-1">{link.notes}</p>}
-                  <button onClick={() => deleteLink(link.id)} className="ml-4 text-xs text-red-500">Remove</button>
-                </li>
-              );
-            })}
-        </ul>
-      </section>
-
-      {/* 📊 Summary */}
-      <section>
-        <h2 className="text-xl font-semibold mb-2 mt-12">Summary</h2>
-        <div className="text-sm text-gray-700">
-          <p>Total Candidates: {candidates.length}</p>
-          <p>Total Requisitions: {requisitions.length}</p>
-          <p>Total Links: {links.length}</p>
+    {/* Requisitions */}
+    <div className="w-1/3 overflow-y-auto bg-white p-5 rounded-xl shadow-md border">
+      <h2 className="text-xl font-semibold text-green-700 mb-4">📋 Requisitions</h2>
+      {requisitions.map((r) => (
+        <div
+          key={r.id}
+          onClick={() => handleRequisitionClick(r)}
+          className="cursor-pointer p-3 mb-3 border border-gray-200 rounded hover:bg-green-50 transition"
+        >
+          <LinkList requisition={r} />
+          <textarea
+            placeholder="Add notes..."
+            value={notes[r.id] || ''}
+            onChange={(e) => handleNoteChange(r.id, e.target.value)}
+            className="w-full mt-2 p-2 border border-gray-300 rounded"
+          />
+          <StatusTracker
+            status={statusByRequisition[r.id] || 'New'}
+            onChange={(status) => handleStatusChange(r.id, status)}
+          />
         </div>
-      </section>
+      ))}
+    </div>
+
+    {/* Details */}
+    <div className="w-1/3 overflow-y-auto bg-white p-5 rounded-xl shadow-md border">
+      <h2 className="text-xl font-semibold text-purple-700 mb-4">📄 Details</h2>
+      {selectedCandidate ? (
+        <LinkDetails candidate={selectedCandidate} requisitions={requisitions} />
+      ) : (
+        <p className="text-gray-500">Select a candidate to see details.</p>
+      )}
+    </div>
+  </div>
+</>
+      ) : (
+        <StatusBoard />
+      )}
     </div>
   );
-}
+};
 
 export default App;

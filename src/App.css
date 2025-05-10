@@ -5,6 +5,46 @@
   text-align: center;
 }
 
+/* App.css - Component-Specific Styling */
+
+.App {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+ul {
+  margin-top: 1rem;
+}
+
+li {
+  margin-bottom: 1.2rem;
+  background: #fff;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+button {
+  margin-top: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  padding: 0.5em 1em;
+  font-size: 0.95em;
+  font-weight: 500;
+  background-color: #e0e7ff;
+  color: #1e3a8a;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+button:hover {
+  background-color: #c7d2fe;
+  border-color: #a5b4fc;
+}
+
+
 .logo {
   height: 6em;
   padding: 1.5em;
@@ -18,18 +58,19 @@
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
+
+@media (prefers-reduced-motion: no-preference) {
+  .logo.react {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);
   }
   to {
     transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
   }
 }
 
