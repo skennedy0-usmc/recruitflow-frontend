@@ -14,7 +14,7 @@ const StatusBoard = () => {
 
   const fetchLinks = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/links');
+      const res = await axios.get('https://recruitflow-api-vg04.onrender.com/api/links');
       const grouped = STATUS_COLUMNS.reduce((acc, status) => {
         acc[status] = res.data.filter((item) => item.status === status);
         return acc;
@@ -46,7 +46,7 @@ const StatusBoard = () => {
     });
 
     try {
-      await axios.put(`http://localhost:3000/links/${movedItem.id}`, {
+      await axios.put(`https://recruitflow-api-vg04.onrender.com/api/links/${movedItem.id}`, {
         status: movedItem.status,
       });
     } catch (err) {
@@ -55,9 +55,9 @@ const StatusBoard = () => {
   };
 
   return (
-    <div className="overflow-x-auto w-full">
+    <div className="overflow-x-auto p-4 bg-gray-50 min-h-screen">
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex space-x-4 min-w-[1200px]">
+        <div className="flex gap-4 min-w-[1200px]">
           {STATUS_COLUMNS.map((status) => {
             const bgClass = {
               Applied: 'bg-blue-50',
@@ -73,9 +73,11 @@ const StatusBoard = () => {
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={`flex-1 min-w-[220px] ${bgClass} p-3 rounded shadow-md`}
+                    className={`flex-1 min-w-[220px] ${bgClass} p-4 rounded-xl shadow-lg`}
                   >
-                    <h2 className="text-lg font-bold mb-3 text-gray-700 text-center">{status}</h2>
+                    <h2 className="text-md font-bold mb-4 text-center text-gray-700 tracking-wide uppercase">
+                      {status}
+                    </h2>
                     {columns[status]?.map((item, index) => (
                       <Draggable
                         key={`link-${item.id}`}
@@ -87,16 +89,16 @@ const StatusBoard = () => {
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className="bg-white p-3 mb-3 rounded-lg border shadow flex items-start space-x-2 hover:shadow-md transition-shadow"
+                            className="bg-white p-3 mb-3 rounded-lg border border-gray-200 shadow hover:shadow-md transition-shadow cursor-move flex gap-2"
                           >
-                            <div className="pt-1 text-gray-400">
+                            <div className="text-gray-400 pt-1">
                               <GripVertical size={16} />
                             </div>
                             <div>
-                              <p className="font-semibold text-sm text-gray-900">
+                              <p className="font-medium text-gray-800 text-sm">
                                 {item.candidate_name}
                               </p>
-                              <p className="text-xs text-gray-600">
+                              <p className="text-xs text-gray-500">
                                 {item.requisition_title}
                               </p>
                             </div>
