@@ -1,7 +1,7 @@
 import React from 'react';
 import { Users, ClipboardList } from 'lucide-react';
 
-const DashboardSummary = ({ candidates, requisitions }) => {
+const DashboardSummary = ({ candidates = [], requisitions = [] }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6">
       {/* Candidates Summary */}
