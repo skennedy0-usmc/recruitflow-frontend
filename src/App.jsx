@@ -1,10 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import DashboardSummary from './Components/DashboardSummary';
-import StatusBoard from './Components/StatusBoard';
-import NewCandidateForm from './Components/NewCandidateForm';
+import DashboardSummary from './components/DashboardSummary';
+import StatusBoard from './components/StatusBoard';
+import NewCandidateForm from './components/NewCandidateForm';
 import CandidateDetail from './components/CandidateDetail';
-
 
 function App() {
   return (
