@@ -1,117 +1,138 @@
-import { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const API_BASE_URL = 'http://localhost:3000/api';
 
-function NewRequisitionForm({ onSuccess }) {
-  const [form, setForm] = useState({
-    title: '',
-    department: '',
-    location: '',
-    status: 'Open',
-    date_opened: '',
-    date_closed: '',
-    hiring_manager: '',
-    recruiter: '',
-    notes: ''
-  });
-
+function NewRequisitionForm({ initialData = {}, onSuccess }) {
+  const [title, setTitle] = useState('');
+  const [department, setDepartment] = useState('');
+  const [status, setStatus] = useState('Open');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
+  const titleInputRef = useRef(null);
+
+  useEffect(() => {
+    if (initialData) {
+      setTitle(initialData.title || '');
+      setDepartment(initialData.department || '');
+      setStatus(initialData.status || 'Open');
+    }
+    if (titleInputRef.current) {
+      titleInputRef.current.focus();
+    }
+  }, [initialData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!title.trim() || !department.trim()) {
+      setError('Both title and department are required.');
+      toast.error('Please fill in all required fields.');
+      return;
+    }
+
+    setError('');
     setLoading(true);
-    setMessage('');
+
+    const payload = { title, department, status };
+
     try {
-      await axios.post(`${API_BASE_URL}/requisitions`, form);
-      setForm({
-        title: '',
-        department: '',
-        location: '',
-        status: 'Open',
-        date_opened: '',
-        date_closed: '',
-        hiring_manager: '',
-        recruiter: '',
-        notes: ''
-      });
-      setMessage('✅ Requisition created!');
-      onSuccess?.();
+      if (initialData.id) {
+        await axios.put(`${API_BASE_URL}/requisitions/${initialData.id}`, payload);
+        toast.success('Requisition updated successfully!');
+      } else {
+        await axios.post(`${API_BASE_URL}/requisitions`, payload);
+        toast.success('Requisition created successfully!');
+      }
+      onSuccess();
     } catch (err) {
-      console.error('Error creating requisition:', err);
-      setMessage('❌ Failed to create requisition.');
+      console.error('Submission error:', err);
+      setError('Failed to save requisition. Please try again.');
+      toast.error('Error saving requisition.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleReset = () => {
+    setTitle(initialData.title || '');
+    setDepartment(initialData.department || '');
+    setStatus(initialData.status || 'Open');
+    setError('');
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl mx-auto space-y-4 bg-white p-6 shadow rounded">
-      <h2 className="text-xl font-semibold">New Requisition</h2>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="bg-red-100 text-red-700 p-2 rounded">
+          {error}
+        </div>
+      )}
 
-      {['title', 'department', 'location', 'hiring_manager', 'recruiter'].map((field) => (
+      <div>
+        <label className="block font-medium mb-1">Title</label>
         <input
-          key={field}
-          name={field}
-          placeholder={field.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-          value={form[field]}
-          onChange={handleChange}
-          className="w-full border px-3 py-2 rounded"
-          required={field === 'title'}
+          ref={titleInputRef}
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          disabled={loading}
+          className="w-full border border-gray-300 p-2 rounded bg-white disabled:bg-gray-100"
         />
-      ))}
+      </div>
 
-      <select
-        name="status"
-        value={form.status}
-        onChange={handleChange}
-        className="w-full border px-3 py-2 rounded"
-      >
-        <option value="Open">Open</option>
-        <option value="On Hold">On Hold</option>
-        <option value="Closed">Closed</option>
-        <option value="Filled">Filled</option>
-      </select>
+      <div>
+        <label className="block font-medium mb-1">Department</label>
+        <input
+          type="text"
+          value={department}
+          onChange={(e) => setDepartment(e.target.value)}
+          disabled={loading}
+          className="w-full border border-gray-300 p-2 rounded bg-white disabled:bg-gray-100"
+        />
+      </div>
 
-      <input
-        type="date"
-        name="date_opened"
-        value={form.date_opened}
-        onChange={handleChange}
-        className="w-full border px-3 py-2 rounded"
-        required
-      />
-      <input
-        type="date"
-        name="date_closed"
-        value={form.date_closed}
-        onChange={handleChange}
-        className="w-full border px-3 py-2 rounded"
-      />
+      <div>
+        <label className="block font-medium mb-1">Status</label>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          disabled={loading}
+          className="w-full border border-gray-300 p-2 rounded bg-white disabled:bg-gray-100"
+        >
+          <option value="Open">Open</option>
+          <option value="Closed">Closed</option>
+          <option value="Paused">Paused</option>
+        </select>
+      </div>
 
-      <textarea
-        name="notes"
-        placeholder="Notes"
-        value={form.notes}
-        onChange={handleChange}
-        className="w-full border px-3 py-2 rounded"
-      />
+      <div className="flex gap-2 items-center">
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-60"
+        >
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Saving...
+            </span>
+          ) : (
+            initialData.id ? 'Update Requisition' : 'Create Requisition'
+          )}
+        </button>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      >
-        {loading ? 'Creating...' : 'Create Requisition'}
-      </button>
-
-      {message && <p className="text-sm mt-2">{message}</p>}
+        <button
+          type="button"
+          onClick={handleReset}
+          disabled={loading}
+          className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 disabled:opacity-60"
+        >
+          Reset
+        </button>
+      </div>
     </form>
   );
 }
