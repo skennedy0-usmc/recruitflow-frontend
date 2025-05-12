@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import RequisitionList from './RequisitionList';
+import RequisitionList from '../RequisitionList';
 import NewRequisitionForm from './NewRequisitionForm';
 
 const API_BASE_URL = 'http://localhost:3000/api'; // Update as needed

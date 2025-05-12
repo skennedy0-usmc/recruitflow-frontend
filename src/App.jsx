@@ -4,7 +4,7 @@ import DashboardSummary from './components/DashboardSummary';
 import StatusBoard from './components/StatusBoard';
 import NewCandidateForm from './components/NewCandidateForm';
 import CandidateDetail from './components/CandidateDetail';
-import RequisitionList from './components/RequisitionList';
+import RequisitionList from './RequisitionList';
 import RequisitionDashboard from './components/RequisitionDashboard';
 import axios from 'axios';
 
